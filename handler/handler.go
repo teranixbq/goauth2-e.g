@@ -1,8 +1,10 @@
 package handler
 
 import (
-	"goauth/model"
+	"goauth/helper"
+	"goauth/middleware"
 	"goauth/service"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,53 +17,49 @@ func Newhandler(service service.ServiceInterface) *handler {
 	return &handler{service}
 }
 
-func (eg *handler) CreateUser(f *fiber.Ctx) error {
-	input := model.Users{}
-	if err := f.BodyParser(&input); err != nil {
-		return f.Status(400).JSON(fiber.Map{
-			"message": "Invalid request",
-		})
-	}
-	err := eg.service.CreateUser(input)
-	if err != nil {
-		return f.Status(400).JSON(fiber.Map{
-			"message": "Failed to create user",
-		})
-	}
-	return f.Status(200).JSON(fiber.Map{
-		"message": "User created successfully",
-	})
-}
-
 func (eg *handler) GoogleAction(f *fiber.Ctx) error {
 	url, err := eg.service.GoogleAction()
 	if err != nil {
-		f.Status(400).JSON(fiber.Map{
-			"message": "Failed to login",
-		})
+		if strings.Contains(err.Error(), "error") {
+			return f.Status(400).JSON(helper.ErrorResponse(err.Error()))
+		}
+
+		return f.Status(500).JSON(helper.ErrorResponse(err.Error()))
 	}
 
 	return f.Redirect(url, fiber.StatusFound)
 }
 
 func (eg *handler) GoogleCallback(f *fiber.Ctx) error {
-	state := f.Query("state")
-	if state != "state" {
-		return f.SendString("States don't Match!!")
-	}
-
 	code := f.Query("code")
 
 	result, err := eg.service.GoogleCallback(code)
 	if err != nil {
-		return f.Status(400).JSON(fiber.Map{
-			"message": err.Error(),
-		})
+		if strings.Contains(err.Error(), "error") {
+			return f.Status(400).JSON(helper.ErrorResponse(err.Error()))
+		}
+
+		return f.Status(500).JSON(helper.ErrorResponse(err.Error()))
 	}
 
-	return f.Status(200).JSON(fiber.Map{
-		"message": "succes",
-		"data":    result,
-	})
+	return f.Status(200).JSON(helper.SuccessWithDataResponse("succes",result))
 
+}
+
+func (eg *handler) GetProfileByID(f *fiber.Ctx) error {
+
+	id, errExtract := middleware.ExtractToken(f)
+	if errExtract != nil {
+		return f.Status(400).JSON(helper.ErrorResponse(errExtract.Error()))
+	}
+
+	result, err := eg.service.GetProfile(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "error") {
+			return f.Status(400).JSON(helper.ErrorResponse(err.Error()))
+		}
+		return f.Status(500).JSON(helper.ErrorResponse(err.Error()))
+	}
+
+	return f.Status(200).JSON(helper.SuccessWithDataResponse("succes",result))
 }

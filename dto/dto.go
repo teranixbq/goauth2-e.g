@@ -3,22 +3,31 @@ package dto
 import "goauth/model"
 
 type ResponseLogin struct {
-	Name string `json:"json"`
+	Name  string `json:"json"`
 	Email string `json:"email"`
 	Token string `json:"token"`
 }
 
-func ModelToResponse(data model.Users,token string)ResponseLogin{
+type ResponseProfile struct {
+	Id    string `json:"id"`
+	Image string `json:"image"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+func ModelToResponse(data model.Users, token string) ResponseLogin {
 	return ResponseLogin{
-		Name: data.Name,
+		Name:  data.Name,
 		Email: data.Email,
 		Token: token,
 	}
 }
 
-func ResponseToModel(data ResponseLogin) model.Users{
-	return model.Users{
-		Name: data.Name,
+func ModelToResponseProfile(data model.Users) ResponseProfile {
+	return ResponseProfile{
+		Id:    data.Id,
+		Image: data.Image,
+		Name:  data.Name,
 		Email: data.Email,
 	}
 }

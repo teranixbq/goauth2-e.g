@@ -4,6 +4,7 @@ import (
 	"goauth/handler"
 	"goauth/repository"
 	"goauth/service"
+	"goauth/middleware"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/oauth2"
@@ -15,8 +16,7 @@ func RouteInit(f *fiber.App, db *gorm.DB, oauth oauth2.Config) {
 	userService := service.NewService(userRepository,oauth)
 	userHandler := handler.Newhandler(userService)
 
-	f.Post("/register", userHandler.CreateUser)
-	//f.Get("/profile/:id", userHandler.GetProfile)
-	f.Get("/google_login", userHandler.GoogleAction)
-	f.Get("/google_callback", userHandler.GoogleCallback)
+	f.Get("/auth/google", userHandler.GoogleAction)
+	f.Get("/callback", userHandler.GoogleCallback)
+	f.Get("/profile",middleware.JWTMiddleware(),userHandler.GetProfileByID)
 }	

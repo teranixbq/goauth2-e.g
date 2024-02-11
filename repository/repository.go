@@ -13,7 +13,6 @@ type repository struct {
 }
 
 type RepositoryInterface interface {
-	CreateUser(data model.Users) error
 	GetProfile(id string) (model.Users, error)
 	CreateWithGoogle(data io.Reader) (model.Users, error)
 }
@@ -52,7 +51,7 @@ func (eg *repository) CreateWithGoogle(data io.Reader) (model.Users, error) {
 
 	tx := eg.db.Where("email = ? ", dataGoogle.Email).Find(&dataUsers)
 	if tx.RowsAffected == 1 {
-		return model.Users{}, tx.Error
+		return dataUsers, tx.Error
 	}
 
 	if tx.Error != nil {
